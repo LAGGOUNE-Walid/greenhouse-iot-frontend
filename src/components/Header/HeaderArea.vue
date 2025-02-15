@@ -52,10 +52,6 @@ const sidebarStore = useSidebarStore()
             </span>
           </span>
         </button>
-        <!-- Hamburger Toggle BTN -->
-        <router-link class="block flex-shrink-0 lg:hidden" to="/">
-          <img src="@/assets/images/logo/logo-icon.svg" alt="Logo" />
-        </router-link>
       </div>
       <div class="hidden sm:block">
 
@@ -73,7 +69,7 @@ const sidebarStore = useSidebarStore()
           <!-- Notification Menu Area -->
 
           <!-- Chat Notification Area -->
-          <DropdownMessage />
+          <!-- <DropdownMessage /> -->
           <!-- Chat Notification Area -->
         </ul>
 

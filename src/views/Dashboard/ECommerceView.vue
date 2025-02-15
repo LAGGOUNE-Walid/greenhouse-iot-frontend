@@ -20,10 +20,6 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue'
       <ChartOne />
       <!-- ====== Chart One End -->
 
-      <!-- ====== Chart Two Start -->
-      <ChartTwo />
-      <!-- ====== Chart Two End -->
-
       <!-- ====== Chart Three Start -->
       <ChartThree />
       <!-- ====== Chart Three End -->
