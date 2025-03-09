@@ -34,7 +34,7 @@
                   d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5zM3 12v-2h2v2zm0 1h2v2H4a1 1 0 0 1-1-1zm3 2v-2h3v2zm4 0v-2h3v1a1 1 0 0 1-1 1zm3-3h-3v-2h3zm-7 0v-2h3v2z" />
               </svg></span> Export excel</button>
 
-            &nbsp;
+          &nbsp;
           <div role="status" v-if="httpLoading">
             <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
               viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -109,43 +109,56 @@ function exportExcel() {
     })
     .catch(error => console.error("Error downloading file:", error));
 }
-
-async function fetchChartData(period) {
-  
+let eventSource = null; // Store current EventSource instance
+function fetchChartData(period) {
   try {
-    const response = await axios.get(`${backendUrl}/api/measurements?interval=${period}`);
-    const apiData = response.data.data;
+    // Close the previous event source if it exists
+    if (eventSource) {
+      eventSource.close();
+    }
 
-    let labels = Object.keys(apiData);
-    const measurementTypesSet = new Set();
-    let seriesData = [];
+    eventSource = new EventSource(`${backendUrl}/api/measurements?interval=${period}`);
 
-    labels.forEach(date => {
-      Object.values(apiData[date]).forEach(m => measurementTypesSet.add(m.measurement_type_string));
-    });
+    eventSource.onmessage = function (event) {
+      const apiData = JSON.parse(event.data).data;
+      let labels = Object.keys(apiData);
+      const measurementTypesSet = new Set();
+      let seriesData = [];
 
-    measurementTypes.value = Array.from(measurementTypesSet);
+      labels.forEach(date => {
+        Object.values(apiData[date]).forEach(m => measurementTypesSet.add(m.measurement_type_string));
+      });
 
-    seriesData = measurementTypes.value.map((type, index) => ({
-      name: `${type}`,
-      data: labels.map(date => {
-        const dayData = Object.values(apiData[date]);
-        const measurement = dayData.find(m => m.measurement_type_string === type);
-        return measurement ? measurement.avg_measuremens : 0;
-      }),
-      color: colors[index % colors.length]
-    }));
+      measurementTypes.value = Array.from(measurementTypesSet);
 
-    chartData.value = { series: seriesData, labels };
+      seriesData = measurementTypes.value.map((type, index) => ({
+        name: `${type}`,
+        data: labels.map(date => {
+          const dayData = Object.values(apiData[date]);
+          const measurement = dayData.find(m => m.measurement_type_string === type);
+          return measurement ? measurement.avg_measuremens : 0;
+        }),
+        color: colors[index % colors.length]
+      }));
+
+      chartData.value = { series: seriesData, labels };
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close(); // Ensure cleanup on error
+    };
+
   } catch (error) {
     console.error("Error fetching chart data:", error);
   }
 }
 
+
 // Watch for period change
 watch(selected, async (newType) => {
   httpLoading.value = true;
-  await fetchChartData(newType);
+  fetchChartData(newType);
   httpLoading.value = false;
 });
 
@@ -153,14 +166,16 @@ watch(selected, async (newType) => {
 onMounted(() => {
   fetchChartData(selected.value);
 
-  refreshInterval = setInterval(() => {
-    fetchChartData(selected.value);
-  }, 3000); // Auto-refresh every second
+  // refreshInterval = setInterval(() => {
+  //   fetchChartData(selected.value);
+  // }, 3000); // Auto-refresh every second
 });
 
 // Cleanup interval when component unmounts
 onUnmounted(() => {
-  clearInterval(refreshInterval);
+  if (eventSource) {
+    eventSource.close();
+  }
 });
 
 const apexOptions = (series) => ({

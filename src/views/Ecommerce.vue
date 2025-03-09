@@ -12,6 +12,7 @@
       <div class="col-span-12 flex flex-wrap gap-4">
         <DataStatsOne />
       </div>
+      
       <div class="col-span-12 xl:col-span-5">
         <Suspense>
 
@@ -37,13 +38,15 @@
       <div class="col-span-12">
         <statistics-chart />
       </div>
-
+<!--
 
 
       <div class="col-span-12 xl:col-span-7">
         <recent-orders />
       </div>
+      -->
     </div>
+    
   </admin-layout>
 </template>
 
