@@ -14,7 +14,8 @@
           <div class="relative block h-2 w-full max-w-[100px] rounded bg-gray-200 dark:bg-gray-800">
             <div
               class="absolute left-0 top-0 flex h-full items-center justify-center rounded bg-brand-500 text-xs font-medium text-white"
-              :class="`w-[${node.last_battery_level?.value ?? 0}%]`"></div>
+              :style="{ 'width' : node.last_battery_level?.value+'%' }"
+            ></div>
           </div>
           <p class="font-medium text-gray-800 text-theme-sm dark:text-white/90">{{ node.last_battery_level?.value ?? 0
             }}%</p>
