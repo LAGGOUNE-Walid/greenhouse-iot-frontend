@@ -5,9 +5,8 @@ import axios from 'axios';
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const cardItems = ref([]);
 const lastUpdated = ref('');
-let refreshInterval;
 
-let eventSource = null; // Store current EventSource instance
+let eventSource = null;
 function fetchCardsData() {
     try {
         if (eventSource) {
@@ -67,7 +66,6 @@ function fetchCardsData() {
 
 onMounted(() => {
     fetchCardsData();
-    // refreshInterval = setInterval(fetchCardsData, 1000); // Auto-refresh every second
 });
 
 onUnmounted(() => {

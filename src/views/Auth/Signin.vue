@@ -71,11 +71,7 @@
       <div class="relative items-center justify-center flex-1 hidden p-8 z-1 bg-brand-950 dark:bg-white/5 lg:flex">
         <common-grid-shape />
         <div class="flex flex-col items-center max-w-xs">
-          <router-link to="/" class="block mb-4">
-            <img src="/images/logo/auth-logo.svg" alt="Logo" />
-          </router-link>
           <p class="text-center text-gray-400 dark:text-white/60">
-            Free and Open-Source Tailwind CSS Admin Dashboard Template
           </p>
         </div>
       </div>
