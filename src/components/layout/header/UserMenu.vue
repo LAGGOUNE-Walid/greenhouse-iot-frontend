@@ -8,7 +8,7 @@
         <img src="/images/user/user-01.jpg" alt="User" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm"> Emirhan Boruch </span>
+      <span class="block mr-1 font-medium text-theme-sm"> PFE 2025 User </span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
