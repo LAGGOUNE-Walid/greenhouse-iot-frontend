@@ -111,15 +111,18 @@ function exportExcel() {
 }
 let eventSource = null; // Store current EventSource instance
 function fetchChartData(period) {
+  httpLoading.value = true;
   try {
     // Close the previous event source if it exists
     if (eventSource) {
+      httpLoading.value = false;
       eventSource.close();
     }
 
     eventSource = new EventSource(`${backendUrl}/api/measurements?interval=${period}`);
 
     eventSource.onmessage = function (event) {
+      httpLoading.value = false;
       const apiData = JSON.parse(event.data).data;
       let labels = Object.keys(apiData);
       const measurementTypesSet = new Set();
@@ -147,11 +150,13 @@ function fetchChartData(period) {
     eventSource.onerror = (err) => {
       console.error("EventSource failed:", err);
       eventSource.close(); // Ensure cleanup on error
+      httpLoading.value = false;
     };
 
   } catch (error) {
     console.error("Error fetching chart data:", error);
   }
+  
 }
 
 
