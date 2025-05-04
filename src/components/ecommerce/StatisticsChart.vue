@@ -55,7 +55,7 @@
     <div class="max-w-full overflow-x-auto custom-scrollbar">
       <div v-for="(series, index) in chartData.series" :key="index" class="mb-6">
         <h4 class="text-md font-semibold text-gray-700 dark:text-white">{{ series.name }}</h4>
-        <VueApexCharts type="area" height="310" :options="apexOptions(series)" :series="[series]" />
+        <VueApexCharts type="line" height="310" :options="apexOptions(series)" :series="[series]" />
       </div>
     </div>
   </div>
@@ -195,7 +195,8 @@ const apexOptions = (series) => ({
     type: "category",
     categories: chartData.value.labels,
     axisBorder: { show: false },
-    axisTicks: { show: false },
+    // axisTicks: { show: false },
+    tickAmount: 5
   },
   yaxis: {
     min: 0,
