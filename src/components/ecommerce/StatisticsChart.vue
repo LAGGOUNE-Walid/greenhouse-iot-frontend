@@ -188,7 +188,7 @@ const apexOptions = (series) => ({
   colors: [series.color],
   chart: {
     fontFamily: "Satoshi, sans-serif",
-    type: "area",
+    type: "line",
     toolbar: { show: false },
   },
   xaxis: {
