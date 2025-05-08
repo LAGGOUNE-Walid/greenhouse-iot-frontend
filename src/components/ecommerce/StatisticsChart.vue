@@ -6,13 +6,12 @@
         <h3 class="text-lg font-semibold text-gray-800 dark:text-white/90">Statistics</h3>
         <div v-for="(type, index) in measurementTypes" :key="index" class="flex min-w-47.5">
           <span class="mt-1 mr-2 flex h-4 w-full max-w-4 items-center justify-center rounded-full border"
-            :style="{ borderColor: colors[index % colors.length] }">
-            <span class="block h-2.5 w-full max-w-2.5 rounded-full"
-              :style="{ backgroundColor: colors[index % colors.length] }">
+            :style="{ borderColor: colorForIndex(index) }">
+            <span class="block h-2.5 w-full max-w-2.5 rounded-full" :style="{ backgroundColor: colorForIndex(index) }">
             </span>
           </span>
           <div class="w-full">
-            <p class="font-semibold" :style="{ color: colors[index % colors.length] }">{{ type }}</p>
+            <p class="font-semibold" :style="{ color: colorForIndex(index) }">{{ type }}</p>
           </div>
         </div>
       </div>
@@ -26,9 +25,12 @@
           ]">
             {{ option.label }}
           </button>
-          <button @click="exportExcel"
-            class="inline-flex items-center justify-center font-medium gap-1 rounded-lg transition px-4 py-1 text-sm bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600 disabled:bg-brand-300"><span
-              class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+          <button @click="exportExcel" :disabled="httpLoading"
+            class="inline-flex items-center justify-center font-medium gap-1 rounded-lg transition px-4 py-1 text-sm shadow-theme-xs"
+            :class="httpLoading
+              ? 'bg-brand-300 cursor-not-allowed text-white'
+              : 'bg-brand-500 text-white hover:bg-brand-600'">
+            <span class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
                 fill="currentColor" class="bi bi-file-earmark-spreadsheet" viewBox="0 0 16 16">
                 <path
                   d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V9H3V2a1 1 0 0 1 1-1h5.5zM3 12v-2h2v2zm0 1h2v2H4a1 1 0 0 1-1-1zm3 2v-2h3v2zm4 0v-2h3v1a1 1 0 0 1-1 1zm3-3h-3v-2h3zm-7 0v-2h3v2z" />
@@ -81,52 +83,54 @@ const colors = ["#3C50E0", "#80CAEE", "#FF5733", "#28A745"];
 
 let refreshInterval; // Store interval ID
 
-function exportExcel() {
-  httpLoading.value = true;
-  const url = `${backendUrl}/api/measurements-export`;
-  fetch(url, {
-    method: "GET",
-    headers: {
-      "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" // Excel MIME type
-    }
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+const colorForIndex = (index) => colors[index % colors.length];
+
+const exportExcel = async () => {
+  try {
+    httpLoading.value = true;
+    const response = await fetch(`${backendUrl}/api/measurements-export`, {
+      headers: {
+        Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       }
-      httpLoading.value = false;
-      return response.blob(); // Convert response to a Blob
-    })
-    .then(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "export.xlsx"; // Default filename
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    })
-    .catch(error => console.error("Error downloading file:", error));
-}
-let eventSource = null; // Store current EventSource instance
+    });
+
+    if (!response.ok) throw new Error("Failed to download Excel.");
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "export.xlsx";
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error("Export failed", err);
+  } finally {
+    httpLoading.value = false;
+  }
+};
+
+let eventSource = null;
+let reconnectTimeout = null;
+const reconnectDelay = 5000; // 5 seconds
+
 function fetchChartData(period) {
   httpLoading.value = true;
-  try {
-    // Close the previous event source if it exists
-    if (eventSource) {
-      httpLoading.value = false;
-      eventSource.close();
-    }
 
+  if (eventSource) {
+    eventSource.close();
+    eventSource = null;
+  }
+
+  const connect = () => {
     eventSource = new EventSource(`${backendUrl}/api/measurements?interval=${period}`);
 
-    eventSource.onmessage = function (event) {
+    eventSource.onmessage = (event) => {
       httpLoading.value = false;
+
       const apiData = JSON.parse(event.data).data;
-      let labels = Object.keys(apiData);
+      const labels = Object.keys(apiData);
       const measurementTypesSet = new Set();
-      let seriesData = [];
 
       labels.forEach(date => {
         Object.values(apiData[date]).forEach(m => measurementTypesSet.add(m.measurement_type_string));
@@ -134,8 +138,8 @@ function fetchChartData(period) {
 
       measurementTypes.value = Array.from(measurementTypesSet);
 
-      seriesData = measurementTypes.value.map((type, index) => ({
-        name: `${type}`,
+      const seriesData = measurementTypes.value.map((type, index) => ({
+        name: type,
         data: labels.map(date => {
           const dayData = Object.values(apiData[date]);
           const measurement = dayData.find(m => m.measurement_type_string === type);
@@ -148,16 +152,27 @@ function fetchChartData(period) {
     };
 
     eventSource.onerror = (err) => {
-      console.error("EventSource failed:", err);
-      eventSource.close(); // Ensure cleanup on error
+      console.error("EventSource error:", err);
       httpLoading.value = false;
-    };
 
-  } catch (error) {
-    console.error("Error fetching chart data:", error);
-  }
-  
+      // Cleanup and retry connection
+      eventSource.close();
+      eventSource = null;
+
+      // Prevent stacking reconnects
+      if (!reconnectTimeout) {
+        reconnectTimeout = setTimeout(() => {
+          console.log("Reconnecting to EventSource...");
+          connect();
+          reconnectTimeout = null;
+        }, reconnectDelay);
+      }
+    };
+  };
+
+  connect();
 }
+
 
 
 // Watch for period change
@@ -181,7 +196,11 @@ onUnmounted(() => {
   if (eventSource) {
     eventSource.close();
   }
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+  }
 });
+
 
 const apexOptions = (series) => ({
   legend: { show: false },

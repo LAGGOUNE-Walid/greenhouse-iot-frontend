@@ -7,30 +7,16 @@
       </div>
       
       <div class="col-span-12 xl:col-span-5">
-        <Suspense>
-
-          <customer-demographic />
-
-          <template #fallback>
-
-            <div role="status" class="max-w-sm animate-pulse">
-              <div class="h-2.5 bg-gray-200 rounded-full dark:bg-gray-700 w-48 mb-4"></div>
-              <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[360px] mb-2.5"></div>
-              <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 mb-2.5"></div>
-              <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[330px] mb-2.5"></div>
-              <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[300px] mb-2.5"></div>
-              <div class="h-2 bg-gray-200 rounded-full dark:bg-gray-700 max-w-[360px]"></div>
-              <span class="sr-only">Loading...</span>
-            </div>
-
-
-          </template>
-        </Suspense>
+        <customer-demographic />
       </div>
-
+      <div class="col-span-12">
+          <MeasurementsTable />
+      </div>
       <div class="col-span-12">
         <statistics-chart />
       </div>
+
+      
     </div>
     
   </admin-layout>
@@ -46,6 +32,7 @@ import CustomerDemographic from '../components/ecommerce/CustomerDemographic.vue
 import StatisticsChart from '../components/ecommerce/StatisticsChart.vue'
 import RecentOrders from '../components/ecommerce/RecentOrders.vue'
 import DataStatsOne from '@/components/Datasets/DataStatsOne.vue'
+import MeasurementsTable from '@/components/tables/MeasurementsTable.vue'
 
 
 export default {
@@ -58,6 +45,7 @@ export default {
     StatisticsChart,
     RecentOrders,
     DataStatsOne,
+    MeasurementsTable,
   },
   name: 'Ecommerce',
 }
