@@ -13,6 +13,9 @@
           <MeasurementsTable />
       </div>
       <div class="col-span-12">
+        <all-statistics-chart />
+      </div>
+      <div class="col-span-12">
         <statistics-chart />
       </div>
 
@@ -30,6 +33,7 @@ import MonthlyTarget from '../components/ecommerce/MonthlySale.vue'
 import MonthlySale from '../components/ecommerce/MonthlyTarget.vue'
 import CustomerDemographic from '../components/ecommerce/CustomerDemographic.vue'
 import StatisticsChart from '../components/ecommerce/StatisticsChart.vue'
+import AllStatisticsChart from '../components/ecommerce/AllStatisticsChart.vue'
 import RecentOrders from '../components/ecommerce/RecentOrders.vue'
 import DataStatsOne from '@/components/Datasets/DataStatsOne.vue'
 import MeasurementsTable from '@/components/tables/MeasurementsTable.vue'
@@ -46,6 +50,7 @@ export default {
     RecentOrders,
     DataStatsOne,
     MeasurementsTable,
+    AllStatisticsChart
   },
   name: 'Ecommerce',
 }
