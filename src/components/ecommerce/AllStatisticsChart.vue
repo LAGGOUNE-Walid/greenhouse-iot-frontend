@@ -44,9 +44,9 @@ const typeMap = ref({})
 const selectedDate = ref('')
 const currentZoom = ref(false)
 
-// Define which measurement types should use different chart styles
-const continuousDataTypes = ['temperature', 'humidity']; // These get smooth lines
-const discreteDataTypes = ['soil_moisture', 'water_level']; // These get step lines
+
+const discreteDataTypes = []; // These get step lines
+const continuousDataTypes = ['soil_moisture', 'water_level', 'temperature', 'humidity']; // These get step lines
 
 function isContinuousDataType(type) {
     return continuousDataTypes.includes(type.toLowerCase());
