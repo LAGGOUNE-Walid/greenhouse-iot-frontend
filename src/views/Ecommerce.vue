@@ -16,7 +16,11 @@
         <all-statistics-chart />
       </div>
       <div class="col-span-12">
-        <statistics-chart />
+        <!-- <statistics-chart /> -->
+      </div>
+
+       <div class="col-span-12">
+        <images-gallery />
       </div>
 
       
@@ -37,6 +41,7 @@ import AllStatisticsChart from '../components/ecommerce/AllStatisticsChart.vue'
 import RecentOrders from '../components/ecommerce/RecentOrders.vue'
 import DataStatsOne from '@/components/Datasets/DataStatsOne.vue'
 import MeasurementsTable from '@/components/tables/MeasurementsTable.vue'
+import ImagesGallery from '@/components/ecommerce/ImagesGallery.vue'
 
 
 export default {
@@ -50,7 +55,8 @@ export default {
     RecentOrders,
     DataStatsOne,
     MeasurementsTable,
-    AllStatisticsChart
+    AllStatisticsChart,
+    ImagesGallery
   },
   name: 'Ecommerce',
 }
