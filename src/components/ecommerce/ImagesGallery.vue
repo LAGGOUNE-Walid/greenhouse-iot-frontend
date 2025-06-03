@@ -2,30 +2,51 @@
   <div class="p-4 max-w-7xl mx-auto">
     <h2 class="text-xl font-semibold mb-4">Image Gallery</h2>
 
-    <div class="grid grid-cols-5 gap-4">
-      <template v-if="loading">
-        <!-- Show 10 shimmer placeholders while loading -->
+    <template v-if="loading">
+      <div class="grid grid-cols-5 gap-4">
         <div
           v-for="n in 10"
           :key="'loading-' + n"
           class="h-32 bg-gray-300 rounded animate-shimmer"
         ></div>
-      </template>
+      </div>
+    </template>
 
-      <template v-else-if="images.length">
-        <img
-          v-for="img in images"
-          :key="img.id"
-          :src="backendUrl + '/storage/' + img.path"
-          alt="Gallery image"
-          class="object-cover w-full h-32 cursor-pointer rounded shadow hover:scale-105 transition-transform duration-200"
-          @click="openModal(img)"
-          loading="lazy"
-        />
-      </template>
+    <template v-else-if="Object.keys(groupedImages).length">
+      <div
+        v-for="(group, folderName) in groupedImages"
+        :key="folderName"
+        class="mb-6 border border-gray-300 rounded"
+      >
+        <div
+          class="cursor-pointer bg-gray-100 p-3 font-semibold flex justify-between items-center"
+          @click="toggleFolder(folderName)"
+        >
+          {{ folderName }}
+          <span class="text-sm text-gray-500">{{ openedFolders[folderName] ? '▲' : '▼' }}</span>
+        </div>
 
-      <p v-else class="col-span-5 text-center text-gray-500">No images found.</p>
-    </div>
+        <div
+          v-if="openedFolders[folderName]"
+          class="grid grid-cols-5 gap-4 p-4 border-t"
+        >
+          <div v-for="img in group" :key="img.id" class="flex flex-col items-center">
+            <img
+              :src="backendUrl + '/storage/' + img.path"
+              alt="Gallery image"
+              class="object-cover w-full h-32 cursor-pointer rounded shadow hover:scale-105 transition-transform duration-200"
+              @click="openModal(img)"
+              loading="lazy"
+            />
+            <span class="text-xs text-gray-500 mt-1">
+              {{ format(parseISO(img.created_at), "dd MMM yyyy H:I:s") }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <p v-else class="text-center text-gray-500">No images found.</p>
 
     <!-- Modal -->
     <div
@@ -52,13 +73,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
+import { parseISO, format, getYear, getMonth, getDate, startOfMonth } from "date-fns";
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const images = ref([]);
 const loading = ref(true);
 const modalOpen = ref(false);
 const selectedImage = ref(null);
+const openedFolders = ref({});
+
+function toggleFolder(name) {
+  openedFolders.value[name] = !openedFolders.value[name];
+}
 
 async function fetchImages() {
   try {
@@ -71,6 +98,28 @@ async function fetchImages() {
     loading.value = false;
   }
 }
+
+// Calculate week number of the month
+function getWeekOfMonth(date) {
+  const dayOfMonth = getDate(date);
+  const firstDayOfMonth = startOfMonth(date).getDay(); // 0 (Sun) - 6 (Sat)
+  return Math.ceil((dayOfMonth + firstDayOfMonth) / 7);
+}
+
+const groupedImages = computed(() => {
+  const groups = {};
+  for (const img of images.value) {
+    const date = parseISO(img.created_at);
+    const weekInMonth = getWeekOfMonth(date);
+    const folder = `Week ${weekInMonth} - ${format(date, "MMMM")} - ${getYear(date)}`;
+    if (!groups[folder]) {
+      groups[folder] = [];
+      openedFolders.value[folder] = false;
+    }
+    groups[folder].push(img);
+  }
+  return groups;
+});
 
 function openModal(img) {
   selectedImage.value = img;
