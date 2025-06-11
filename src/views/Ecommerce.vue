@@ -16,7 +16,7 @@
         <all-statistics-chart />
       </div>
       <div class="col-span-12">
-        <!-- <statistics-chart /> -->
+        <statistics-chart />
       </div>
 
        <div class="col-span-12">
