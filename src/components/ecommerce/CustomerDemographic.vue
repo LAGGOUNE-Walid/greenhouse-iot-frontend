@@ -38,6 +38,27 @@
           </p>
         </div>
       </div>
+      <div class="mt-10 bg-white p-3 rounded space-y-6">
+        <h2 class="text-lg font-bold text-gray-700 dark:text-white">Battery Charts</h2>
+        <div v-for="node in nodes" :key="'chart-' + node.id">
+          <h3 class="text-sm font-semibold text-gray-600 dark:text-white mb-2">
+            Node ID #{{ node.id }}
+          </h3>
+          <apexchart v-if="getNodeBatteryData(node.id).length" type="line" height="200" :options="{
+            chart: { toolbar: { show: false } },
+            xaxis: { type: 'category', title: { text: 'Time' } },
+            yaxis: { title: { text: 'Battery (%)' }, min: 0, max: 100 },
+            stroke: { curve: 'smooth' },
+            title: { text: 'Battery Level Over Time', align: 'left', style: { fontSize: '14px' } }
+          }" :series="[
+        {
+          name: 'Battery Level',
+          data: getNodeBatteryData(node.id)
+        }
+      ]" />
+        </div>
+      </div>
+
     </template>
   </div>
 
@@ -47,6 +68,7 @@ import { onMounted, ref, onUnmounted } from 'vue'
 const backendUrl = import.meta.env.VITE_BACKEND_URL;
 const nodes = ref([])
 const loading = ref(true) // <--- new
+const batteries = ref([])
 
 let eventSource = null; // Store current EventSource instance
 
@@ -68,9 +90,27 @@ function getNodes() {
     console.error(error);
   }
 }
+function getNodeBatteryData(nodeId) {
+  return batteries.value
+    .filter(b => b.node_id === nodeId)
+    .map(b => ({
+      x: new Date(b.created_at).toLocaleTimeString(),
+      y: b.value
+    }));
+}
+async function fetchBatteries() {
+  try {
+    const res = await fetch(`${backendUrl}/api/batteries`);
+    const data = await res.json();
+    batteries.value = data.data;
+  } catch (err) {
+    console.error("Error fetching batteries", err);
+  }
+}
 
 onMounted(() => {
   getNodes();
+  fetchBatteries();
 })
 onUnmounted(() => {
   if (eventSource) {

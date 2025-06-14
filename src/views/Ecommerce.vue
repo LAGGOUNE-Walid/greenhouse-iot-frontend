@@ -6,7 +6,7 @@
         <DataStatsOne />
       </div>
       
-      <div class="col-span-12 xl:col-span-5">
+      <div class="col-span-12 xl:col-span-12">
         <customer-demographic />
       </div>
       <div class="col-span-12">
@@ -16,7 +16,7 @@
         <all-statistics-chart />
       </div>
       <div class="col-span-12">
-        <statistics-chart />
+        <!-- <statistics-chart /> -->
       </div>
 
        <div class="col-span-12">

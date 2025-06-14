@@ -1,10 +1,8 @@
 <template>
   <div class="min-h-screen xl:flex" v-if="signed">
-    <app-sidebar />
     <Backdrop />
     <div
       class="flex-1 transition-all duration-300 ease-in-out"
-      :class="[isExpanded || isHovered ? 'lg:ml-[290px]' : 'lg:ml-[90px]']"
     >
       <app-header />
       <div class="p-4 mx-auto max-w-screen-2xl md:p-6">
