@@ -38,7 +38,7 @@
           </p>
         </div>
       </div>
-      <div class="mt-10 bg-white p-3 rounded space-y-6">
+      <!-- <div class="mt-10 bg-white p-3 rounded space-y-6">
         <h2 class="text-lg font-bold text-gray-700 dark:text-white">Battery Charts</h2>
         <div v-for="node in nodes" :key="'chart-' + node.id">
           <h3 class="text-sm font-semibold text-gray-600 dark:text-white mb-2">
@@ -57,7 +57,7 @@
         }
       ]" />
         </div>
-      </div>
+      </div> -->
 
     </template>
   </div>
