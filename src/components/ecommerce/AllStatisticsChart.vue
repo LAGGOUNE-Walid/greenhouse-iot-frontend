@@ -42,13 +42,11 @@ const currentZoom = ref(false)
 
 const discreteDataTypes = []; // These get step lines
 const continuousDataTypes = ['soil_moisture', 'water_level', 'temperature', 'humidity', 'pressure']; // These get step lines
-const units = { 'soil_moisture': "%", 'temperature': "°C", "humidity": "%", 'pressure': "hPa" }
+const units = { 'soil_moisture': "%", 'temperature': "°C", "humidity": "%", 'pressure': "hPa", 'water_level': "cm" } // Added water_level unit
 
 function isContinuousDataType(type) {
     return continuousDataTypes.includes(type.toLowerCase());
 }
-
-// function getUnit(type)
 
 function getChartOptions(type, dateSelected) {
     const isDailyView = dateSelected !== '';
@@ -61,7 +59,7 @@ function getChartOptions(type, dateSelected) {
             animations: { enabled: false }
         },
         xaxis: {
-            type: 'datetime',
+            type: 'datetime', // This is crucial for Unix timestamps
             title: { text: 'Time' },
             labels: {
                 datetimeFormatter: isDailyView
@@ -72,12 +70,12 @@ function getChartOptions(type, dateSelected) {
                         day: 'MMM dd',
                         hour: 'HH:mm',
                     },
-                datetimeUTC: false,
+                datetimeUTC: false, // Set to true if your timestamps are UTC, false if local
             },
             tickAmount: isDailyView ? 24 : undefined,
         },
         yaxis: {
-            title: { text: `${type} ${units[type]}` },
+            title: { text: `${type} ${units[type] || ''}` }, // Use units[type] or empty string if not found
             forceNiceScale: true,
         },
         stroke: {
@@ -92,12 +90,15 @@ function getChartOptions(type, dateSelected) {
         },
         tooltip: {
             x: {
-                format: isDailyView ? 'HH:mm' : 'dd MMM yyyy HH:mm',
+                format: isDailyView ? 'HH:mm' : 'dd MMM HH:mm', // Simplified format based on common usage
             },
             y: {
                 formatter: function (value) {
-                    return value === null ? 'No data' :
-                        `${value}${units[type]}`;
+                    // Check for null or undefined value and return 'No data'
+                    if (value === null || typeof value === 'undefined') {
+                        return 'No data';
+                    }
+                    return `${value}${units[type] || ''}`; // Use units[type] or empty string if not found
                 }
             }
         },
@@ -118,9 +119,15 @@ function getChartOptions(type, dateSelected) {
 function getSeriesConfig(type, dataPoints) {
     const isContinuous = isContinuousDataType(type);
 
+    // Map the data points to the [timestamp_in_ms, value] format
+    const formattedData = dataPoints.map(point => {
+        // Assuming point.timestamp is in seconds, convert to milliseconds
+        return [point.timestamp * 1000, point.value];
+    });
+
     return [{
         name: type,
-        data: dataPoints,
+        data: formattedData, // Use the formatted data here
         ...(!isContinuous && {
             strokeDashArray: [5, 5],
             fill: {
@@ -137,17 +144,20 @@ function getSeriesConfig(type, dataPoints) {
 
 function onZoom(chartCtx, { xaxis }) {
     const range = xaxis.max - xaxis.min;
+    // Check if the range is less than, for example, 3 days (3 * 24 * 60 * 60 * 1000 ms)
+    // Adjust this threshold as per your desired "daily" zoom level
     const newZoom = range < 3 * 24 * 60 * 60 * 1000;
     if (newZoom !== currentZoom.value) {
         currentZoom.value = newZoom;
         chartCtx.updateOptions({
             tooltip: {
                 x: {
-                    format: newZoom ? 'dd MMM yyyy HH:mm' : 'yyyy-MM-dd'
+                    format: newZoom ? 'dd MMM HH:mm' : 'yyyy-MM-dd' // Adjust tooltip format based on zoom
                 },
             },
             xaxis: {
                 labels: {
+                    // Adjust x-axis label format based on zoom
                     datetimeFormatter: newZoom
                         ? { hour: 'HH:mm', minute: 'HH:mm' }
                         : { day: 'MMM dd', month: 'MMM dd', year: 'yyyy' },
@@ -159,7 +169,12 @@ function onZoom(chartCtx, { xaxis }) {
 
 function onResetZoom() {
     currentZoom.value = false;
+    // When resetting zoom, revert the tooltip and label formats to default for the current view (daily/all)
+    // This part might need refinement depending on how you want "default" to behave after reset.
+    // For now, it will use the `getChartOptions` default settings.
+    // A more robust solution might involve explicitly setting formats back here.
 }
+
 
 async function fetchData() {
     try {
@@ -172,7 +187,24 @@ async function fetchData() {
 
         const response = await fetch(`${backendUrl}/api/measurements?${params.toString()}`);
         const json = await response.json();
-        typeMap.value = json.data;
+
+        // The key change: Assuming json.data is an object where keys are types
+        // and values are arrays of { timestamp: unix_seconds, value: number }
+        const processedTypeMap = {};
+        for (const type in json.data) {
+            // Ensure the data for each type is an array and process it
+            if (Array.isArray(json.data[type])) {
+                processedTypeMap[type] = json.data[type].map(item => ({
+                    timestamp: item.timestamp, // Keep original timestamp for `getSeriesConfig` to multiply
+                    value: item.value
+                }));
+            } else {
+                processedTypeMap[type] = []; // Handle cases where data might not be an array
+            }
+        }
+        typeMap.value = processedTypeMap;
+
+
     } catch (error) {
         console.error('Failed to fetch chart data:', error);
     }
@@ -184,28 +216,28 @@ function resetDate() {
 }
 const httpLoading = ref(false);
 const exportExcel = async () => {
-  try {
-    httpLoading.value = true;
-    const response = await fetch(`${backendUrl}/api/measurements-export`, {
-      headers: {
-        Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      }
-    });
+    try {
+        httpLoading.value = true;
+        const response = await fetch(`${backendUrl}/api/measurements-export`, {
+            headers: {
+                Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+        });
 
-    if (!response.ok) throw new Error("Failed to download Excel.");
+        if (!response.ok) throw new Error("Failed to download Excel.");
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "export.xlsx";
-    a.click();
-    window.URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error("Export failed", err);
-  } finally {
-    httpLoading.value = false;
-  }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "export.xlsx";
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Export failed", err);
+    } finally {
+        httpLoading.value = false;
+    }
 };
 
 onMounted(fetchData);
