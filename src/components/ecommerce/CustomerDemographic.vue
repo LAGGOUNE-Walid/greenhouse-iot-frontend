@@ -44,7 +44,7 @@
           <h3 class="text-sm font-semibold text-gray-600 dark:text-white mb-2">
             Node ID #{{ node.id }}
           </h3>
-          <!-- <apexchart v-if="getNodeBatteryData(node.id).length" type="line" height="200" :options="{
+          <apexchart v-if="getNodeBatteryData(node.id).length" type="line" height="200" :options="{
             chart: { toolbar: { show: false } },
             xaxis: { type: 'category', title: { text: 'Time' } },
             yaxis: { title: { text: 'Battery (%)' }, min: 0, max: 100 },
@@ -55,7 +55,7 @@
           name: 'Battery Level',
           data: getNodeBatteryData(node.id)
         }
-      ]" /> -->
+      ]" />
         </div>
       </div>
 
