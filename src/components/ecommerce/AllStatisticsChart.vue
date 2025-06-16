@@ -117,10 +117,13 @@ function getChartOptions(type, dateSelected) {
 
 function getSeriesConfig(type, dataPoints) {
     const isContinuous = isContinuousDataType(type);
-    var dataPoints =  [point.x * 1000, point.y]
+    console.log(dataPoints)
+     const formattedData = dataPoints.map(point => {
+        return [point.x * 1000, point.y];
+    });
     return [{
         name: type,
-        data: dataPoints,
+        data: formattedData,
         ...(!isContinuous && {
             strokeDashArray: [5, 5],
             fill: {
