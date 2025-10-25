@@ -12,6 +12,8 @@
       <div class="col-span-12">
           <MeasurementsTable />
       </div>
+
+      
       <div class="col-span-12">
         <all-statistics-chart />
       </div>

@@ -27,6 +27,14 @@
             <apexchart width="100%" height="300" type="line" :options="getChartOptions(type, selectedDate)"
                 :series="getSeriesConfig(type, dataPoints)" @zoomed="onZoom" @beforeResetZoom="onResetZoom" />
         </div>
+
+        <!-- Battery Levels Chart -->
+        <div v-if="Object.keys(batteryData).length > 0" class="border rounded p-4 bg-white">
+            <h3 class="text-lg font-semibold mb-4">Battery Levels</h3>
+            <apexchart width="100%" height="400" type="line" :options="getBatteryChartOptions()"
+                :series="getBatterySeriesConfig()" />
+        </div>
+
     </div>
 </template>
 
@@ -36,6 +44,7 @@ import ApexChart from 'vue3-apexcharts'
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL
 const typeMap = ref({})
+const batteryData = ref({})
 const selectedDate = ref('')
 const currentZoom = ref(false)
 
@@ -117,7 +126,6 @@ function getChartOptions(type, dateSelected) {
 
 function getSeriesConfig(type, dataPoints) {
     const isContinuous = isContinuousDataType(type);
-    console.log(dataPoints)
      const formattedData = dataPoints.map(point => {
         return [point.x * 1000, point.y];
     });
@@ -164,6 +172,76 @@ function onResetZoom() {
     currentZoom.value = false;
 }
 
+function getBatteryChartOptions() {
+    return {
+        chart: {
+            id: 'battery-chart',
+            type: 'line',
+            zoom: { enabled: true },
+            animations: { enabled: false }
+        },
+        xaxis: {
+            type: 'datetime',
+            title: { text: 'Time' },
+            labels: {
+                datetimeFormatter: {
+                    year: 'yyyy',
+                    month: 'MMM dd',
+                    day: 'MMM dd',
+                    hour: 'HH:mm',
+                },
+                datetimeUTC: false,
+            },
+        },
+        yaxis: {
+            title: { text: 'Battery Level %' },
+            min: 0,
+            max: 100,
+            forceNiceScale: true,
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 2,
+        },
+        markers: {
+            size: 4,
+            hover: {
+                sizeOffset: 2
+            }
+        },
+        tooltip: {
+            x: {
+                format: 'dd MMM yyyy HH:mm',
+            },
+            y: {
+                formatter: function (value) {
+                    return value === null ? 'No data' : `${value}%`;
+                }
+            }
+        },
+        legend: {
+            show: true,
+            position: 'top',
+            horizontalAlign: 'center',
+        },
+        dataLabels: {
+            enabled: false,
+        },
+        noData: {
+            text: 'No data available',
+            align: 'center',
+            verticalAlign: 'middle',
+        },
+    };
+}
+
+function getBatterySeriesConfig() {
+    return Object.entries(batteryData.value).map(([nodeId, dataPoints]) => ({
+        name: `Node ${nodeId}`,
+        data: dataPoints.map(point => [point.x, point.y]),
+    }));
+}
+
 async function fetchData() {
     try {
         const params = new URLSearchParams();
@@ -176,6 +254,11 @@ async function fetchData() {
         const response = await fetch(`${backendUrl}/api/measurements?${params.toString()}`);
         const json = await response.json();
         typeMap.value = json.data;
+
+        // Fetch battery data
+        const batteryResponse = await fetch(`${backendUrl}/api/batteries?chart=1`);
+        const batteryJson = await batteryResponse.json();
+        batteryData.value = batteryJson;
     } catch (error) {
         console.error('Failed to fetch chart data:', error);
     }
@@ -185,6 +268,7 @@ function resetDate() {
     selectedDate.value = '';
     fetchData();
 }
+
 const httpLoading = ref(false);
 const exportExcel = async () => {
   try {

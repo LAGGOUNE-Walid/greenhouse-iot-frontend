@@ -30,12 +30,12 @@
           v-if="openedFolders[folderName]"
           class="grid grid-cols-5 gap-4 p-4 border-t"
         >
-          <div v-for="img in group" :key="img.id" class="flex flex-col items-center">
+          <div v-for=" (img,index) in group" :key="img.id" class="flex flex-col items-center">
             <img
               :src="backendUrl + '/storage/' + img.path"
               alt="Gallery image"
               class="object-cover w-full h-32 cursor-pointer rounded shadow hover:scale-105 transition-transform duration-200"
-              @click="openModal(img)"
+              @click="openModal(img, group[index+1], index+1, folderName)"
               loading="lazy"
             />
             <span class="text-xs text-gray-500 mt-1">
@@ -67,6 +67,8 @@
           alt="Zoomed image"
           class="max-w-full max-h-[70vh] rounded"
         />
+        <span >{{  selectedImage.id  }}</span>
+        <button @click="moveToNext"><h2>NEXT PIC</h2></button>
       </div>
     </div>
   </div>
@@ -81,6 +83,9 @@ const images = ref([]);
 const loading = ref(true);
 const modalOpen = ref(false);
 const selectedImage = ref(null);
+const nextImage = ref(null);
+const folderName = ref(null);
+const nextLoopIndex = ref(null);
 const openedFolders = ref({});
 
 function toggleFolder(name) {
@@ -121,7 +126,20 @@ const groupedImages = computed(() => {
   return groups;
 });
 
-function openModal(img) {
+function  moveToNext() {
+  selectedImage.value = nextImage.value;
+  nextImage.value = groupedImages.value[folderName.value][nextLoopIndex.value+1]
+
+  nextLoopIndex.value = nextLoopIndex.value + 1
+  modalOpen.value = true;
+
+}
+
+
+function openModal(img, nextImg, nextIndex, fName) {
+  nextImage.value = nextImg;
+  folderName.value = fName;
+  nextLoopIndex.value = nextIndex;
   selectedImage.value = img;
   modalOpen.value = true;
 }

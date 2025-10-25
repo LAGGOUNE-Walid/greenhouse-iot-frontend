@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+const backendUrl = import.meta.env.VITE_BACKEND_URL; 
 
 const cardItems = ref([]);
 const isLoading = ref(true);
