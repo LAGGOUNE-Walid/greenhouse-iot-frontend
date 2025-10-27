@@ -31,7 +31,7 @@
         <!-- Battery Levels Chart -->
         <div v-if="Object.keys(batteryData).length > 0" class="border rounded p-4 bg-white">
             <h3 class="text-lg font-semibold mb-4">Battery Levels</h3>
-            <apexchart width="100%" height="400" type="line" :options="getBatteryChartOptions()"
+            <apexchart width="100%" height="400" type="line" :options="getChartOptions('battery', selectedDate)"
                 :series="getBatterySeriesConfig()" />
         </div>
 
@@ -50,8 +50,8 @@ const currentZoom = ref(false)
 
 
 const discreteDataTypes = []; // These get step lines
-const continuousDataTypes = ['soil_moisture', 'water_level', 'temperature', 'humidity', 'pressure']; // These get step lines
-const units = { 'soil_moisture': "%", 'temperature': "°C", "humidity": "%", 'pressure': "hPa" }
+const continuousDataTypes = ['soil_moisture', 'water_level', 'temperature', 'humidity', 'pressure', 'battery']; // These get step lines
+const units = { 'soil_moisture': "%", 'temperature': "°C", "humidity": "%", 'pressure': "hPa", 'battery': "%" }
 
 function isContinuousDataType(type) {
     return continuousDataTypes.includes(type.toLowerCase());
@@ -62,6 +62,8 @@ function isContinuousDataType(type) {
 function getChartOptions(type, dateSelected) {
     const isDailyView = dateSelected !== '';
     const isContinuous = isContinuousDataType(type);
+    const isBattery = type.toLowerCase() === 'battery';
+    
     return {
         chart: {
             id: `chart-${type}`,
@@ -86,8 +88,9 @@ function getChartOptions(type, dateSelected) {
             tickAmount: isDailyView ? 24 : undefined,
         },
         yaxis: {
-            title: { text: `${type} ${units[type]}` },
+            title: { text: `${type} ${units[type] || ''}` },
             forceNiceScale: true,
+            ...(isBattery && { min: 0, max: 100 }),
         },
         stroke: {
             curve: isContinuous ? 'smooth' : 'stepline',
@@ -106,12 +109,14 @@ function getChartOptions(type, dateSelected) {
             y: {
                 formatter: function (value) {
                     return value === null ? 'No data' :
-                        `${value}${units[type]}`;
+                        `${value}${units[type] || ''}`;
                 }
             }
         },
         legend: {
-            show: false,
+            show: isBattery,
+            position: 'top',
+            horizontalAlign: 'center',
         },
         dataLabels: {
             enabled: false,
@@ -172,73 +177,12 @@ function onResetZoom() {
     currentZoom.value = false;
 }
 
-function getBatteryChartOptions() {
-    return {
-        chart: {
-            id: 'battery-chart',
-            type: 'line',
-            zoom: { enabled: true },
-            animations: { enabled: false }
-        },
-        xaxis: {
-            type: 'datetime',
-            title: { text: 'Time' },
-            labels: {
-                datetimeFormatter: {
-                    year: 'yyyy',
-                    month: 'MMM dd',
-                    day: 'MMM dd',
-                    hour: 'HH:mm',
-                },
-                datetimeUTC: false,
-            },
-        },
-        yaxis: {
-            title: { text: 'Battery Level %' },
-            min: 0,
-            max: 100,
-            forceNiceScale: true,
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 2,
-        },
-        markers: {
-            size: 4,
-            hover: {
-                sizeOffset: 2
-            }
-        },
-        tooltip: {
-            x: {
-                format: 'dd MMM yyyy HH:mm',
-            },
-            y: {
-                formatter: function (value) {
-                    return value === null ? 'No data' : `${value}%`;
-                }
-            }
-        },
-        legend: {
-            show: true,
-            position: 'top',
-            horizontalAlign: 'center',
-        },
-        dataLabels: {
-            enabled: false,
-        },
-        noData: {
-            text: 'No data available',
-            align: 'center',
-            verticalAlign: 'middle',
-        },
-    };
-}
-
 function getBatterySeriesConfig() {
-    return Object.entries(batteryData.value).map(([nodeId, dataPoints]) => ({
-        name: `Node ${nodeId}`,
-        data: dataPoints.map(point => [point.x, point.y]),
+    return Object.entries(batteryData.value).map(([nodeId, dataPoints]) => {
+        return getSeriesConfig('battery', dataPoints.map(point => ({ x: point.x, y: point.y })))[0];
+    }).map((series, index) => ({
+        ...series,
+        name: `Node ${Object.keys(batteryData.value)[index]}`
     }));
 }
 
